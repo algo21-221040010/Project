@@ -26,7 +26,7 @@ class Stock():
         self.stock_code = stock_code
 
         # 交易数据
-        self.r_price = price_dict[stock_code]#get_open_price(stock_code, date, price_dict)
+        self.r_price = price_dict[stock_code] # get_open_price(stock_code, date, price_dict)
 
         # 以前的 trade数据
         self.trade_gain = None
@@ -265,6 +265,8 @@ def load_obj(name):
 if __name__ == '__main__':
     buy_stock = load_obj(r'data\lossstop(4).pkl')
     all_trade_date = [key for key,value in buy_stock.items()]
+    # print(buy_stock)
+    # a==a
 
     # get price data and change into dict
     stock_data = pd.read_csv('data\open.csv', header=0, index_col=0)
@@ -282,10 +284,13 @@ if __name__ == '__main__':
         # update the backtest data
         trade.update(date, signal)
         #print(trade)
-        trade.trade(buy_stock[date]['stocks'])
+        if signal==0:
+            trade.trade([])
+        else:
+            trade.trade(['000155.SZ'])# buy_stock[date]['stocks']
         trade.get_trade_data()
         #print(trade.trade_data)
-        trade.show_trading_info(buy_stock[date]['stocks'])
+        trade.show_trading_info(['000155.SZ']) # buy_stock[date]['stocks']
         trade.save_trade_data()
         
     trade.get_all_trade_data()
