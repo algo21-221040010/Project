@@ -1,5 +1,8 @@
 # 1. Our group member
 - Shao Kai邵凯, Diao Xingning刁兴宁, Zhuo Jinjun卓金俊, Jiang Yilu江一橹
+
+-------------------------------------------------------------------
+
 # 2. What is included in our delivery?
 - i. 'code' folder contains all of our **codes implementations** and data we needed. There get three folders in it, namely:
   - '**database**' folder, which contains codes which read data from database and write data in it. 
