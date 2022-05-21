@@ -9,7 +9,7 @@ class OrderBook():
     def __init__(self, data, symbol='IF2206') -> None:
         self.orderbook = data
     
-    def get_price_volume(self, timestamp, direction, trade_volume):
+    def get_price_volume(self, datetime, direction, trade_volume):
         prefix = direction.title() + 'Price'
         prices = [prefix+'01', prefix+'02', prefix+'03', prefix+'04', prefix+'05']
         prefix = direction.title() + 'Volume'
@@ -19,8 +19,8 @@ class OrderBook():
         current_vol = 0
         i = 0
         while current_vol < trade_volume and i <= 4:
-            volume = self.orderbook.get(timestamp).get(volumes[i])
-            price = self.orderbook.get(timestamp).get(prices[i])
+            volume = self.orderbook.get(datetime).get(volumes[i])
+            price = self.orderbook.get(datetime).get(prices[i])
             this_trade_vol = min(volume, trade_volume - current_vol)
             # 交易的 量、价 详情
             trade_detail[i] = {'price':price, 'volume':this_trade_vol}
@@ -28,12 +28,17 @@ class OrderBook():
             i += 1
         
         if current_vol < trade_volume:
-            raise ValueError(f"Cannot {direction} {trade_volume} unit at {timestamp}! Please trade less than {current_vol} unit.")
+            raise ValueError(f"Cannot {direction} {trade_volume} unit at {datetime}! Please trade less than {current_vol} unit.")
         return trade_detail
 
+    def get_mid_price(self, datetime):
+        bid = self.orderbook.get(datetime).get('BuyPrice01')
+        ask = self.orderbook.get(datetime).get('SellPrice01')
+        return (bid + ask) / 2
 
-def get_orderbook_data():
-    data = pd.read_csv(r"C:\Users\shao\Documents\WeChat Files\wxid_kje1iu6rjxry22\FileStorage\File\2022-05\bidask(1).csv")
+
+def get_orderbook_data(path=r'data\202202bidask.csv'):
+    data = pd.read_csv(path)
     data = data.set_index('TradingTime')
     data.index = pd.to_datetime(data.index)
     time_list = list(data.index)

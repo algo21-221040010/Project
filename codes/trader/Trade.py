@@ -22,22 +22,6 @@ import pandas as pd
 import datetime
 
 
-def backtest(trade_dt, trade_price, signal):
-    trade_dict = {}
-    # 调用 Trade 类，进行模拟交易
-    trade = Trade()  
-    for date in trade_dt:
-        trade.update(date, price=trade_price[date], signal=signal[date])
-        trade_dict[date] = trade.trade()
-    
-    trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
-    trade_data.index = pd.to_datetime(trade_data.index)
-    # 回测指标分析
-    analyse = Evaluate(trade_data)
-    evaluate_data = analyse.evaluate()
-    return trade_data, evaluate_data
-
-
 class Trade():
     def __init__(self, allocation=10000):
         self.date_time = None  # signalData.date
@@ -49,15 +33,10 @@ class Trade():
         self.commission = 0.0002
 
         # 交易数据
-        self.cash = self.allocation  # 初始化现金为上期现金值
+        self.cash = allocation  # 初始化现金为上期现金值
         self.value = allocation
         self.position = 0
         self.position_value = 0
-
-    def get_trade_position(self): 
-        position = (self.pre_value) // ((1 + self.commission) * self.trade_price)
-        trade_position = position - self.pre_position
-        return trade_position
 
     def buy(self):
         long_position = self.cash // ((1 + self.commission) * self.trade_price) # 增加的头寸
@@ -69,19 +48,17 @@ class Trade():
 
         self.cash = self.cash - self.cost - long_position_value
         self.value = self.cash + self.position_value
-        return self.position_value
 
     def sell(self):
-        short_position = self.position # 负值，表示降低/做空的头寸
-        short_position_value = short_position * self.trade_price # 负值， 降低的头寸价值
+        short_position = self.position 
+        short_position_value = short_position * self.trade_price # 头寸价值
 
         self.cost = self.commission * abs(short_position_value)
-        self.cash += short_position_value
+        self.cash += short_position_value- self.cost
         
         self.position = 0
-        self.position_value = self.position * self.trade_price # 今天价格算的 持仓价值
+        self.position_value = 0 
         self.value = self.cash + self.position_value
-        # return self.position_value
 
     def hold(self):
         self.get_position_value()
@@ -90,7 +67,6 @@ class Trade():
 
     def get_position_value(self):
         self.position_value = self.position * self.trade_price
-        return self.position_value
 
     def update(self, date_time, price, signal):
         self.date_time = date_time
@@ -102,7 +78,7 @@ class Trade():
     def trade(self, show_info=False):
         """ 开始交易"""
         if self.signal > 0:
-            if self.cash > 0:
+            if self.cash > self.trade_price:
                 self.buy()
         elif self.signal < 0:  
             if self.position > 0:         
@@ -120,22 +96,20 @@ class Trade():
 
     # 获取 并 存储
     def get_trade_data(self):
-        '''
-        Return
-            [dict]  {date: {'date_time','position_value', 'cash', 'weight', 'signal',
-                            
-                            }
-        '''
         param_list = ['value', 'trade_price', 'position_value', 'cash', 'signal']
         value = {name: getattr(self, name) for name in param_list}
         return value
 
     def show_trading_info(self):
         if self.signal > 0:
-            print(f'{self.date_time} 换仓，买入，'
+            print(f'{self.date_time} 买入，'
+                  f'持仓价值 {self.position_value:.2f}，剩余 {self.cash:.2f} 现金')
+        elif self.signal < 0:
+            print(f'{self.date_time} 卖出，'
                   f'持仓价值 {self.position_value:.2f}，剩余 {self.cash:.2f} 现金')
         else:
             print(f'{self.date_time} 无操作，当前持仓价值 {self.position_value:.2f}，总资产 {self.value:.2f}')
+
 
 
 
@@ -143,29 +117,19 @@ if __name__ == '__main__':
     # 数据导入国内股债收盘价
     from Evaluate import *
     from Pictures import Pictures 
-    from TWAP import Twap
+    # from TWAP import Twap
 
     import pickle
     def load_obj(name): 
         with open(name, 'rb') as f: 
             return pickle.load(f)
     signal = load_obj(r'data\signal.pkl')
-    signal_df = pd.DataFrame.from_dict(signal, 'index')
-    signal_df.index = pd.to_datetime(signal_df.index)
-    signal = signal_df.to_dict().get(0)
-    # print(signal_df)
-    # keys = []
-    # for key, value in signal:
-    #     keys.append(pd.to_datetime(key)
-    # signal = dict(zip([],[](]))
-    # print(signal)
     
-    trade_data = pd.read_csv(r'data\202202bidask.csv', index_col=1)
-    print(trade_data)
+    trade_data = pd.read_csv(r'data\202202data.csv', index_col=2)
     trade_data.index = pd.to_datetime(trade_data.index)
     
     trade_dt = list(trade_data.index)
-    trade_price = trade_data['BuyPrice01'].to_dict()
+    trade_price = trade_data['OpenPrice'].to_dict()
 
     trade_dict = {}
     # 调用 Trade 类，进行模拟交易
@@ -176,11 +140,13 @@ if __name__ == '__main__':
     
     trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
     trade_data.index = pd.to_datetime(trade_data.index)
+    
     # 回测指标分析
     analyse = Evaluate(trade_data)
     evaluate_data = analyse.evaluate()
 
+    print(evaluate_data)
     p = Pictures(trade_data)
-    print(type(p).__name__)
-    # Pictures.draw_value_ret(trade_data)
+    # print(type(p).__name__)
+    p.draw()
 

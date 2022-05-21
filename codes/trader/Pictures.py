@@ -16,6 +16,7 @@ Class & Functions
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
 from Trade import Trade
 from Evaluate import Evaluate, get_return
@@ -45,7 +46,7 @@ class Pictures():
     def draw_winLoseTopN(self, n=3):
         # 获取 Top n 盈亏的 买入、卖出index
         data = self.trade_data.copy()
-        pos_perform = self.holding_gain
+        pos_perform = pd.read_csv('result\holding_data.csv')
         
         pos_perform.loc[:,'gain_rank_ds'] = pos_perform['gain'].rank(method='first',ascending=False) # 自大到小排列
         pos_perform.loc[:,'gain_rank_as'] = pos_perform['gain'].rank(method='first',ascending=True) # 自小到大排列
@@ -206,9 +207,9 @@ class Pictures():
         plt.show()#savefig(self.savefig_path+"_drawdown_ratio.png")
         plt.close()
     
-    def paint(self):
-        self.draw_winLoseTopN()
-        self.draw_value_ret()
+    def draw(self):
+        # self.draw_winLoseTopN()
+        self.draw_value()
         self.draw_rolling_drawdown()
 
     
