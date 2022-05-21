@@ -21,13 +21,9 @@ Return
 
 import numpy as np
 import pandas as pd
-import os
 import datetime
 from pandas.core import series
 from pandas.core.frame import DataFrame
-
-from Trade import Trade
-
 
 
 def get_return(trade_data, freq='day', price_name='benchmark_price') -> series: 
@@ -73,17 +69,7 @@ class Evaluate():
 
         self.each_trade_info = None # 每次交易的买卖价格、卖卖头寸、买卖时的策略净值
         # 对于0-1仓位还是非整数仓位 的区分
-        self.position_rule = 'int' # 'int' or 'fract'
-
-    def __str__(self) -> str:
-        param_list = ['date_time','time_frequency', 'trade_data']
-        value = [(name, getattr(self, name)) for name in param_list]
-        f_string = ''
-        for i, (item, count) in enumerate(value):
-            f_string += (f'#{i+1}: '
-                         f'{item.title():<15s} = '
-                         f'{count}\n')
-        return f_string
+        self.position_rule = 'int' # 'int' or 'fract
 
 
     # 获取每次买卖交易的信息，以便求出 '胜率', '盈亏比'等持仓表现数据（适用全仓交易
@@ -200,13 +186,12 @@ class Evaluate():
         # perform_data['year'] = perform_data.index.year
 
         max_drawdown = self.get_max_drawdown_data()
-        print(max_drawdown)
-        print(perform_data)
         
         self.evaluate_data = pd.merge(max_drawdown,perform_data,left_index=True, right_index=True, how='left')
         self.evaluate_data['Calmar Ratio'] = self.get_calmar(self.evaluate_data)
 
-        self.evaluate_data.set_index('year', inplace=True)
+        self.evaluate_data.set_index('WEEK', inplace=True)
+        self.evaluate_data = self.evaluate_data.drop('year', axis=1)
         self.save_evaluate_data()
         # 字典形式 
         # self.evaluate_data = self.evaluate_data.to_dict('index')
