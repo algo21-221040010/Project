@@ -116,20 +116,4 @@ MySQL.Execute_Code(sql_str)
 sql_str = 'select * from Order_data'
 results = MySQL.Select_Code(sql_str)
 print(results)
-#
-# sql_str = '''
-# select chi_name from Test where secu_code='000001'
-# '''
-# results = MySQL.Select_Code(sql_str)
-# print(results)
 
-# 从csv导入数据
-# # engine = create_engine('mysql+pymysql://{0}:{1}@{2}:{3}/{4}?charset=utf8'.format(user
-#                                                                          ,passwd
-#                                                                          ,host
-# #                                                                          ,port
-# #                                                                          ,db))
-# os.chdir(r'D:\Coding\Project\Database')
-# data = pd.read_csv('data.csv')
-# test_csvtosql = PDtoMYSQL(host, user, passwd, db, tb="damo", df=data, port=3306)
-# test_csvtosql.show()

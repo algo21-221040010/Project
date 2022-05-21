@@ -1,3 +1,6 @@
+"""
+创建 Market_data_Trade 表
+"""
 # database
 # mysql -h rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com -u algo76 -p
 import os

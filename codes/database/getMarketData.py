@@ -1,3 +1,7 @@
+"""
+创建 MarketData 类，可以从数据库中调取"Market_data_Backtest" 和 "Market_data_Trade" 
+两个表的数据
+"""
 import datetime
 from pymysql import *
 from sqlalchemy import create_engine

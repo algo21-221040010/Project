@@ -1,3 +1,6 @@
+"""
+创建 Market_data_Backtest 表
+"""
 # database
 # mysql -h rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com -u algo76 -p
 import os
@@ -67,26 +70,17 @@ db='mfe5210project'
 MySQL = MySQLOperation(host, port, db, user, passwd)
 
 # 建表
-sql_str = '''CREATE TABLE Order_data (
-                        date_time TIMESTAMP(6),
-                        position_value FLOAT(40),
-                        position FLOAT(40),
-                        direction CHAR(20),
-                        avg_price FLOAT(40),
-                        volume INT(20),
-                        trade_detail CHAR(255));'''
+sql_str = '''CREATE TABLE Market_data_Backtest (
+                        TradingDate int,
+                        TradingTime datetime,
+                        Symbol varchar(6),
+                        OpenPrice decimal(9,3),
+                        ClosePrice decimal(9,3),
+                        HighPrice decimal(9,3),
+                        LowPrice decimal(9,3),
+                        Change decimal(9,3),
+                        ChangeRatio decimal(9,3),
+                        Position int,
+                        Volume decimal(19,3),
+                        Amount decimal(19,3);'''
 MySQL.Execute_Code(sql_str)
-
-# 插入操作代码
-sql_str = '''
-INSERT INTO Order_data
-(`date_time`,`position_value`,`position`,`direction`,`avg_price`,`volume`,`trade_detail`)
-VALUES
-('2022-01-04 09:30:00.400000','24693.0','5','buy','4938.6','5', '001');
-'''
-MySQL.Execute_Code(sql_str)
-
-## # 查询数据
-sql_str = 'select * from Order_data'
-results = MySQL.Select_Code(sql_str)
-print(results)

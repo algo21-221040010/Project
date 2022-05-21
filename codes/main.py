@@ -3,7 +3,7 @@ import datetime
 
 from database.downloadBackTestData import *
 from strategy.resnet import *
-from trader.Trade import Trade #, load_obj
+from trader.Trade import Trade 
 from trader.Evaluate import Evaluate
 from trader.Pictures import Pictures
 
@@ -16,8 +16,8 @@ df_test = dfTemp.iloc[4500:9000,1:]
 train_iter = load_array(preprocess(df), batch_size=batch_size)
 train(net, train_iter, num_epochs, lr)
 
-x_test, y_test=preprocess(df_test)
-y_test_hat=net(x_test.float()).argmax(axis=1)
+x_test, y_test = preprocess(df_test)
+signal = net(x_test.float()).argmax(axis=1)  # get signal
 
 # 导入回测数据
 trade_data = getDataForBackTestAnalysis()

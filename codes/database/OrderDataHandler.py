@@ -1,3 +1,7 @@
+"""
+创建 MySQLOperation 类
+创建 save_order, get_order 来存取order数据库中的数据
+"""
 # database
 # mysql -h rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com -u algo76 -p
 import os
