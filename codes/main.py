@@ -2,20 +2,22 @@ import pandas as pd
 import datetime
 
 from database.downloadBackTestData import *
-# from strategy.resnet import * # TODO
-
+from strategy.resnet import *
 from trader.Trade import Trade #, load_obj
 from trader.Evaluate import Evaluate
 from trader.Pictures import Pictures
 
-
 # 获取 signal
-# TODO
-import pickle
-def load_obj(name): 
-    with open(name, 'rb') as f: 
-        return pickle.load(f)
-signal = load_obj(r'data\signal.pkl')
+lr, num_epochs, batch_size = 0.05, 5, 250
+dfTemp = getDataForBackTestAnalysis()
+df = dfTemp.iloc[:4500,1:]
+df_test = dfTemp.iloc[4500:9000,1:]
+
+train_iter = load_array(preprocess(df), batch_size=batch_size)
+train(net, train_iter, num_epochs, lr)
+
+x_test, y_test=preprocess(df_test)
+y_test_hat=net(x_test.float()).argmax(axis=1)
 
 # 导入回测数据
 trade_data = getDataForBackTestAnalysis()
