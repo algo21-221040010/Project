@@ -70,7 +70,6 @@ class Evaluate():
     def __init__(self, trade_data, commission=0.0002) -> None:
         self.time_frequency = 240
         self.trade_data = trade_data
-        print('--'*80, self.trade_data)
         self.commission = commission
 
         self.each_trade_info = None # 每次交易的买卖价格、卖卖头寸、买卖时的策略净值
@@ -145,13 +144,12 @@ class Evaluate():
         return daily_gain
 
     # 只有 0-1仓位时获取
-    def get_holding_gain(self,save = True) -> DataFrame:
+    def get_holding_gain(self,save=True) -> DataFrame:
         # 开平仓收益---> 后续来计算盈亏比 & 胜率
         each_trade = self.trade_data[self.trade_data['signal'] > 0]
         
         each_trade = each_trade[['value','position_value','cash']]
         each_trade = each_trade.reset_index()
-        print('------'*8,'\n', each_trade)
         
         # 计算 开平仓结果数据
         # 计算收益，把 扣除的佣金费用加回去
@@ -161,7 +159,7 @@ class Evaluate():
 
         self.holding_data = each_trade.copy().set_index('index')
         if save:
-            self.holding_data.to_csv(r'C:\Users\shao\Desktop\CUHKSZ\programming\project\holding_data.csv')
+            self.holding_data.to_csv(r'result\holding_data.csv')
         return self.holding_data
 
     def get_holding_perform(self) -> DataFrame:
@@ -179,15 +177,13 @@ class Evaluate():
     def get_volatility(self) -> series:
         # 日度数据 计算年度波动率
         ret_data = get_return(self.trade_data, freq='day', price_name='value')
-        print('------'*11)
-        print(ret_data)
         stra_vol = ret_data.resample("y").agg(np.std) * np.sqrt(244)  # 日度收益率算出来的波动率-->年化
-        stra_vol.name = 'Volatility'
+        stra_vol.name = 'Annualized Volatility'
         return stra_vol
 
     def get_sharpe(self, ret_vol_data) -> series:
         # 夏普比率： 策略平均收益率/波动率
-        sharpe = np.divide(ret_vol_data['Annualized Return'], ret_vol_data['Volatility'])
+        sharpe = np.divide(ret_vol_data['Annualized Return'], ret_vol_data['Annualized Volatility'])
         sharpe.name = 'Sharpe Ratio'
         return sharpe
 
@@ -232,7 +228,7 @@ class Evaluate():
         self.evaluate_data.set_index('year', inplace=True)
         self.save_evaluate_data()
         # 字典形式 
-        self.evaluate_data = self.evaluate_data.to_dict('index')
+        # self.evaluate_data = self.evaluate_data.to_dict('index')
         return self.evaluate_data
 
     

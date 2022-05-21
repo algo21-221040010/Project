@@ -7,7 +7,22 @@ from Trade import Stock, Trade #, load_obj
 from Evaluate import Evaluate
 from Pictures import Pictures
 
+def backtest(trade_dt, trade_price, signal):
+    trade_dict = {}
+    # 调用 Trade 类，进行模拟交易
+    trade = Trade()  
+    for date in trade_dt:
+        trade.update(date, price=trade_price[date], signal=signal[date])
+        trade_dict[date] = trade.trade()
+    
+    trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
+    trade_data.index = pd.to_datetime(trade_data.index)
+    # 回测指标分析
+    analyse = Evaluate(trade_data)
+    evaluate_data = analyse.evaluate()
+    return trade_data, evaluate_data
 
+    
 ### 获取 signal
 closes = pd.read_csv('close.csv')
 closes.date = pd.to_datetime(closes.date)
@@ -54,3 +69,49 @@ evaluate_data = analyse.evaluate()
 #### 绘图
 picture = Pictures(analyse)
 picture.paint()
+
+
+
+# 数据导入国内股债收盘价
+# from Evaluate import *
+# from Pictures import Pictures 
+# from TWAP import Twap
+
+# import pickle
+# def load_obj(name): 
+#     with open(name, 'rb') as f: 
+#         return pickle.load(f)
+# signal = load_obj(r'data\signal.pkl')
+# signal_df = pd.DataFrame.from_dict(signal, 'index')
+# signal_df.index = pd.to_datetime(signal_df.index)
+# signal = signal_df.to_dict().get(0)
+# # print(signal_df)
+# # keys = []
+# # for key, value in signal:
+# #     keys.append(pd.to_datetime(key)
+# # signal = dict(zip([],[](]))
+# # print(signal)
+
+# trade_data = pd.read_csv(r'data\202202bidask.csv', index_col=1)
+# print(trade_data)
+# trade_data.index = pd.to_datetime(trade_data.index)
+
+# trade_dt = list(trade_data.index)
+# trade_price = trade_data['BuyPrice01'].to_dict()
+
+# trade_dict = {}
+# # 调用 Trade 类，进行模拟交易
+# trade = Trade()  
+# for date in trade_dt:
+#     trade.update(date, price=trade_price[date], signal=signal[date])
+#     trade_dict[date] = trade.trade()
+
+# trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
+# trade_data.index = pd.to_datetime(trade_data.index)
+# # 回测指标分析
+# analyse = Evaluate(trade_data)
+# evaluate_data = analyse.evaluate()
+
+# p = Pictures(trade_data)
+# print(type(p).__name__)
+# # Pictures.draw_value_ret(trade_data)

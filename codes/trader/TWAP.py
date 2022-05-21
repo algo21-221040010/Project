@@ -5,12 +5,14 @@ from datetime import datetime, timedelta
 # from codes.backtest.Trade import Stock
 from OrderBook import OrderBook, get_orderbook_data
 
+import Trade
 
-class Twap():
+
+class Twap(Trade):
     """
     Twap 算法实现了在设定的交易时间段内，完成设定的下单手数。
     """
-    def __init__(self, symbol='IF2206', account = None):
+    def __init__(self, symbol='IF2206', account=None):
         """创建 Twap 实例
         
         Args:
@@ -47,10 +49,11 @@ class Twap():
             trade_time.append(time_inner[0]) 
         return trade_time
 
-    def buy(self, position):
-        price_vol = self.orderbook.get_price_volume(timestamp=self.time_list[0], 
+    def buy(self, datetime, position):
+        price_vol = self.orderbook.get_price_volume(datetime=datetime, 
                                     direction='sell', trade_volume=position)
         price_vol_data = pd.DataFrame.from_dict(price_vol) #.sum()
+        
         self.position += position 
         self.position_value += np.sum(price_vol_data.loc['price'] * price_vol_data.loc['volume'])
         avg_price =  self.position_value / position
@@ -58,16 +61,24 @@ class Twap():
         trade_info = {'position_value':self.position_value, 'position':self.position, 'direction':'buy', 'avg_price':avg_price, 'volume':position, 'trade_detail':price_vol}
         return trade_info
 
-    def sell(self, position):
+    def sell(self, datetime, position):
         # 按 tick sell
-        price_vol = self.orderbook.get_price_volume(timestamp=self.time_list[0], 
+        price_vol = self.orderbook.get_price_volume(datetime=datetime, 
                                     direction='buy', trade_volume=position)
         price_vol = pd.DataFrame.from_dict(price_vol) #.sum()
+
+        self.position -= position
         self.position_value -= np.sum(price_vol.loc['price'] * price_vol.loc['volume'])
+        assert self.position >= 0, 'cannot have negative position!'
         avg_price =  self.position_value / position
 
         trade_info = {'position_value':self.position_value, 'position':self.position, 'direction':'sell', 'avg_price':avg_price, 'volume':position, 'trade_detail':price_vol}
         return trade_info
+
+    def hold(self, datetime):
+        mid_price = self.orderbook.get_mid_price(datetime=datetime)
+        self.position_value = mid_price * self.position
+
 
     def trade(self, direction, total_volume, start_time, span:int, per_volume:int):
         """_summary_
@@ -99,8 +110,40 @@ class Twap():
 
     
 if __name__ == '__main__':
-    start_time = datetime(2022,1,4,9,30)
-    t = Twap(account='test01')
-    trade_info = t.trade(direction='buy', total_volume=10, start_time=start_time, span=120, per_volume=5)
-    print(trade_info)
+    # 数据导入国内股债收盘价
+    from Evaluate import *
+    from Pictures import Pictures 
+
+    import pickle
+
+    def load_obj(name): 
+        with open(name, 'rb') as f: 
+            return pickle.load(f)
+    signal = load_obj(r'data\signal.pkl')
+    
+    trade_data = pd.read_csv(r'data\202202data.csv', index_col=2)
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    trade_dt = list(trade_data.index)
+    trade_price = trade_data['OpenPrice'].to_dict()
+
+    trade_dict = {}
+    # 调用 Trade 类，进行模拟交易
+    twap = Twap()  
+    for date in trade_dt:
+        trade_dict[date] = twap.trade()
+    
+    trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    # 回测指标分析
+    analyse = Evaluate(trade_data)
+    evaluate_data = analyse.evaluate()
+
+    print(evaluate_data)
+    p = Pictures(trade_data)
+    # print(type(p).__name__)
+    p.draw()
+
+
     
