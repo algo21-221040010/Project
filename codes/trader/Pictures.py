@@ -100,9 +100,8 @@ class Pictures():
         plt.xticks([])
 
         ax2 = fig.add_subplot(gs[2:, 0])
-        plt.plot(data['value'], 'k', label='benchmark value')
-        plt.legend()
-        plt.ylabel('Value')
+        plt.plot(data['value'], 'k')
+        plt.ylabel('Strategy Value')
         for label in ax2.xaxis.get_ticklabels():
             label.set_rotation(20)
         ax2.xaxis.set_major_locator(mticker.MaxNLocator(8))
