@@ -29,6 +29,7 @@ class Pictures():
     def __init__(self, trade_data) -> None:
         self.time_frequency = 240
         self.trade_data = trade_data
+        print(trade_data)
 
     def draw_trading_signal_with_kline(self):
         # 数据
