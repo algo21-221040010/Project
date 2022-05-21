@@ -1,5 +1,3 @@
-
-
 # 1. What is included in our delivery?
 - i. 'code' folder contains all of our code implementations and data we needed. There get five '.py' files,which are *'main.py', 'Strategy.py', 'Trade.py', 'Evaluate.py', 'Pictures.py'* respectively. And 'data' folder contains five csv files, which contain **OHLC of all markets** in the past 10 years and **CSI300’s open price** respectively.
 - ii. '回测结果' fold contains all of our **backtest** results.

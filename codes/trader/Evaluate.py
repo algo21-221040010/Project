@@ -185,14 +185,8 @@ class Evaluate():
         ret_vol_data = pd.concat([ret, vol], axis=1)
         return ret_vol_data
 
-    def get_result_path(self):
-        self.result_path = r'C:\Users\shao\Desktop\CUHKSZ\programming\project\evaluate_data.csv'
-
-    def save_evaluate_data(self):
-        self.get_result_path()
-        if not os.path.exists(os.path.split(self.result_path)[0]):
-            os.makedirs(os.path.split(self.result_path)[0])     
-        self.evaluate_data.to_csv(self.result_path, index_label='year') #, index=False)
+    def save_evaluate_data(self):   
+        self.evaluate_data.to_csv(r'result\evaluate_data.csv', index_label='year') #, index=False)
 
     def evaluate(self):      
         # 获取持仓表现： 胜率、盈亏比
