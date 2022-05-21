@@ -23,7 +23,7 @@ import datetime
 
 
 class Trade():
-    def __init__(self, allocation=10000):
+    def __init__(self, allocation=1000000):
         self.date_time = None  # signalData.date
         self.trade_price = None
         self.signal = None
@@ -73,7 +73,6 @@ class Trade():
         # self.weight = weight
         self.trade_price = price  
         self.signal = signal # 0
-
 
     def trade(self, show_info=False):
         """ 开始交易"""
@@ -146,7 +145,7 @@ if __name__ == '__main__':
     evaluate_data = analyse.evaluate()
 
     print(evaluate_data)
-    p = Pictures(trade_data)
-    # print(type(p).__name__)
-    p.draw()
+    # p = Pictures(trade_data)
+    # # print(type(p).__name__)
+    # p.draw()
 

@@ -17,6 +17,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+from pyecharts import options as opts
+from pyecharts.charts import Kline,Scatter
+import seaborn as sns
+import os
 
 from Trade import Trade
 from Evaluate import Evaluate, get_return
@@ -27,9 +31,8 @@ class Pictures():
         self.time_frequency = 240
         
         self.trade_data = trade_data
+        print(trade_data)
 
-        self.savefig_path = r"C:\Users\shao\Desktop\CUHKSZ\programming\project\_"
-        
         # 转化 trade_data 为 dataframe 格式
         if isinstance(self.trade_data, dict):
             self.change_trade_data_to_df()
@@ -42,6 +45,58 @@ class Pictures():
 
         self.trade_data['date'] = self.trade_data['date_time'].apply(lambda x:x.date())
 
+    def draw_trading_signal_with_kline(self):
+        # 数据
+        data = self.trade_data.copy()
+        # 买卖信号数据（ ==>> list格式 ）
+        buy_date = list(data[data.signal > 0].index)
+        buy = list(data[data.signal > 0].trade_price)
+        sell_date = list(data[data.signal < 0].index)
+        sell = list(data[data.signal < 0].trade_price)
+        
+        # K线数据
+        kdata = pd.read_csv(r'data\202202data.csv', index_col=2)
+        kdata.index = pd.to_datetime(kdata.index)
+        xaxis = list(kdata.index.tolist())
+        kdata = kdata.loc[:,['OpenPrice','ClosePrice','LowPrice','HighPrice']].to_dict('split')['data'] 
+
+        # 绘图  
+        kline = (Kline()
+                    .add_xaxis(["{}".format(i) for i in xaxis])
+                    .add_yaxis("kline", kdata)
+                    .set_global_opts(
+                        yaxis_opts = opts.AxisOpts(is_scale=True),#type_="value",
+                        xaxis_opts = opts.AxisOpts(is_scale=True),
+                        title_opts = opts.TitleOpts(title="Kline & Signal"),
+                        # 区域缩放配置 DataZoomOpts
+                        datazoom_opts = opts.DataZoomOpts(type_='slider', range_start=0, range_end=1500, orient='horizontal')
+                        )
+                    )
+        buysignal = (Scatter()
+                        .add_xaxis( ["{}".format(i) for i in buy_date])
+                        .add_yaxis("buy signal", buy, symbol_size = 15, symbol = 'triangle',
+                                    label_opts = opts.LabelOpts(is_show=False))#散点旁不显示数据label
+                        .set_global_opts(
+                            yaxis_opts = opts.AxisOpts(is_scale=True),
+                            xaxis_opts = opts.AxisOpts(is_scale=True),
+                            datazoom_opts = opts.DataZoomOpts(type_='slider',range_start=0,range_end=1500,orient='horizontal')
+                            )
+                        )
+        sellsignal = (Scatter()
+                        .add_xaxis( ["{}".format(i) for i in sell_date])
+                        .add_yaxis("sell signal", sell, symbol_size=15, symbol='triangle',symbol_rotate=180,
+                                    color='green',label_opts=opts.LabelOpts(is_show=False))#散点旁不显示数据label
+                        .set_global_opts(
+                            yaxis_opts = opts.AxisOpts(is_scale=True),
+                            xaxis_opts = opts.AxisOpts(is_scale=True),
+                            datazoom_opts = opts.DataZoomOpts(type_='slider', range_start=0, range_end=100, orient='horizontal')
+                            )
+                        )
+        # K线 和 买卖信号显示在一张图中
+        kline.overlap(buysignal).overlap(sellsignal)
+        kline.render(r'result/kline_signal.html') 
+        return kline
+        
     # holding gain
     def draw_winLoseTopN(self, n=3):
         # 获取 Top n 盈亏的 买入、卖出index
@@ -69,7 +124,7 @@ class Pictures():
         
         plt.figure(figsize=(15, 7))
         
-        plt.plot(data['stra_Val'],label="strategy value",color='r',linewidth=1)
+        plt.plot(data['stra_Val'], label="strategy value",color='r',linewidth=1)
         plt.plot(data['stra_Val'][buy_idx],'g^',label="buy", markersize=5)
         plt.plot(data['stra_Val'][sell_idx],'bv',label="sell", markersize=5)
 
@@ -93,7 +148,6 @@ class Pictures():
         data = self.trade_data.copy()
 
         data['ret'] = data['value'].pct_change()
-
         data.loc[:, 'cummax_price'] = data['value'].cummax()
         data.loc[:, 'dd'] = -np.subtract(data.loc[:, 'cummax_price'], data.loc[:, 'value'])
         data.loc[:, 'dd_ratio'] = np.divide(data.loc[:, 'dd'], data.loc[:, 'cummax_price'])
@@ -119,71 +173,6 @@ class Pictures():
         plt.show()  # savefig(self.savefig_path + "trading_sig.png")
         plt.close()
     
-    def draw_value_ret(self, begin_year:int = 2011, end_year:int = 2021):
-        strate_data = self.trade_data.copy()
-        strate_data.loc[:,'bench_net_val'] = np.divide(strate_data['benchmark_price'], strate_data['benchmark_price'].iloc[0])
-        strate_data.loc[:,'stra_net_val'] = strate_data.loc[:,'value'] / strate_data['value'].iloc[0]
-        strate_data.loc[:,'abs_ret'] = np.divide(strate_data.loc[:,'stra_net_val'], strate_data.loc[:,'bench_net_val'])
-        # 分钟收益
-        strate_data.loc[:,'stra_ret'] = get_return(strate_data[['date','stra_net_val']], price_name='stra_net_val', freq='day')
-
-        ### 画图：策略净值、标的净值、绝对收益
-        # 总图
-        plt.rcParams['font.sans-serif']=['SimHei']
-        plt.rcParams['axes.unicode_minus']=False
-        strate_data.set_index(['date_time'], inplace=True)
-        # 画图：策略净值、标的净值、绝对收益
-        fig,ax = plt.subplots(figsize=(15, 10))
-        line1 = ax.plot(strate_data['bench_net_val'],'k',label="标的累计净值", linewidth=1)
-        line2 = ax.plot(strate_data['stra_net_val'],'g-',label="策略净值", linewidth=1.5)
-        ax2 = ax.twinx()
-        line3 = ax2.plot(strate_data['abs_ret'],'b--',label="绝对收益", linewidth=1)
-        lns = line1 + line2 + line3
-        labs = [l.get_label() for l in lns]
-        ax.legend(lns, labs, loc=2)
-        ax.set_xlabel("Date")
-        #ax2.set_ylim(0, 0.5)
-        plt.title("策略表现")
-        #plt.show()
-        plt.show()#savefig(self.savefig_path + "all_strategy_netValue.png")
-        plt.close()
-
-        # 分年图
-        # 布局: 一行三个子图
-        subpicture = end_year - begin_year + 1 # 绘图年份 算头也算尾
-        col = 3
-        row = (subpicture + col -1)//col # 向上取整
-        fig,ax = plt.subplots(row, col, figsize=(20, 20)) 
-        for i in range(end_year - begin_year + 1):
-            plot_loc = (i//col, i%col)
-            year = begin_year + i
-            next_year = begin_year + 1 + i
-
-            data = strate_data[(strate_data.index>pd.Timestamp(year,1,1)) & (strate_data.index<pd.Timestamp(next_year,1,1))].copy()
-            try:
-                data.loc[:,'bench_net_val'] = np.divide(data.loc[:,'benchmark_price'], data.loc[:,'benchmark_price'].iloc[0])
-                data.loc[:,'stra_net_val'] = np.divide(data.loc[:,'value'], data.loc[:,'value'].iloc[0])
-                # 策略年化收益率、日度收益率
-                data.loc[:,'abs_ret'] = np.divide(data.loc[:,'stra_net_val'], data.loc[:,'bench_net_val'])
-            except IndexError:  # 本年度 无数据，因而.iloc[0]会报错IndexError
-                data['bench_net_val'] = np.nan
-                data['stra_net_val'] = np.nan
-                # 策略年化收益率、日度收益率
-                data['abs_ret'] = np.nan
-
-            # 画图：策略日收益率图  
-            # 布局 一行三个子图
-            line1 = ax[i//col, i%col].plot(data['bench_net_val'],'k',label="标的净值", linewidth=1)
-            line2 = ax[i//col, i%col].plot(data['stra_net_val'],'g-',label="策略净值", linewidth=1)
-            ax2 = ax[i//col, i%col].twinx()
-            line3 = ax2.plot(data['abs_ret'],'b:',label="绝对收益", linewidth=1)
-            lns = line1 + line2 + line3
-            labs = [l.get_label() for l in lns]
-            ax[i//col, i%col].legend(lns, labs, loc=2)
-            plt.title(str(year))
-        plt.show()#savefig(self.savefig_path + "AllPerYear_strategy_netValue.png")
-        plt.close()
-    
     def draw_rolling_drawdown(self):
         '''
         Function
@@ -202,22 +191,53 @@ class Pictures():
         price_data.loc[:,'dd'] = -np.subtract(price_data.loc[:,'cummax_price'], price_data.loc[:,'value'])
         price_data.loc[:,'dd_ratio'] = np.divide( price_data.loc[:,'dd'], price_data.loc[:,'cummax_price'])
         
-        plt.bar(price_data['date_time'], height=price_data['dd_ratio'])
+        plt.bar(price_data.index, height=price_data['dd_ratio'])
         plt.title("策略回撤率")
         plt.show()#savefig(self.savefig_path+"_drawdown_ratio.png")
         plt.close()
     
     def draw(self):
         # self.draw_winLoseTopN()
-        self.draw_value()
-        self.draw_rolling_drawdown()
+        # self.draw_value()
+        # self.draw_rolling_drawdown()
+        self.draw_trading_signal_with_kline()
 
     
 if __name__ == '__main__':
-    trade = Trade([],[])
-    
-    analyse = Evaluate(trade)    
-    analyse.evaluate()
+    # trade = Trade()
+    # 数据导入国内股债收盘价
+    from Trade import Trade
+    from Pictures import Pictures 
+    # from TWAP import Twap
 
-    picture = Pictures(analyse)
-    picture.paint()
+    import pickle
+    def load_obj(name): 
+        with open(name, 'rb') as f: 
+            return pickle.load(f)
+    signal = load_obj(r'data\signal.pkl')
+    
+    trade_data = pd.read_csv(r'data\202202data.csv', index_col=2)
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    trade_dt = list(trade_data.index)
+    trade_price = trade_data['OpenPrice'].to_dict()
+
+    trade_dict = {}
+    # 调用 Trade 类，进行模拟交易
+    trade = Trade()  
+    for date in trade_dt:
+        trade.update(date, price=trade_price[date], signal=signal[date])
+        trade_dict[date] = trade.trade()
+    
+    trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    # 回测指标分析
+    analyse = Evaluate(trade_data)
+    evaluate_data = analyse.evaluate()
+
+    print(evaluate_data)
+    p = Pictures(trade_data)
+    # print(type(p).__name__)
+    p.draw()
+    
