@@ -58,14 +58,15 @@ class MySQLOperation:
             print(e)
 
 
-host='rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com'
-port=3306
-user='algo76'
-passwd="123456@CUHKSZ"
-db='mfe5210project'
-# 方法实例化
-MySQL = MySQLOperation(host, port, db, user, passwd)
+# host='rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com'
+# port=3306
+# user='algo76'
+# passwd="123456@CUHKSZ"
+# db='mfe5210project'
+# # 方法实例化
+# MySQL = MySQLOperation(host, port, db, user, passwd)
 
+MySQL = MySQLOperation('rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com', 3306, 'mfe5210project', 'algo76', "123456@CUHKSZ")
 import datetime
 dict = {"datetime":datetime.datetime(2022,1,4,9,30,0),'position_value': 24693.0, 'position': 5, 'direction': 'buy',
         'avg_price': 4938.6, 'volume': 5, 'trade_detail': {0: {'price': 4936.0, 'volume': 1.0}, 1: {'price': 4938.6, 'volume': 1.0},
@@ -104,6 +105,8 @@ def get_order_data():
     sql_str = 'select * from Order_data'
     results = MySQL.Select_Code(sql_str)
     print(results)
+
+
 
 save_order_data(dict)
 

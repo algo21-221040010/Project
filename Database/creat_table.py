@@ -86,7 +86,7 @@ VALUES
 '''
 MySQL.Execute_Code(sql_str)
 
-# # 查询数据
+## # 查询数据
 sql_str = 'select * from Order_data'
 results = MySQL.Select_Code(sql_str)
 print(results)

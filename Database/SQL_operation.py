@@ -1,7 +1,11 @@
 # database
 # mysql -h rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com -u algo76 -p
-
+import os
 from pymysql import *
+from sqlalchemy import create_engine
+import pandas as pd
+
+
 # MySQL操作函数
 class MySQLOperation:
     def __init__(self, host, port, db, user, passwd, charset='utf8'):
@@ -53,46 +57,79 @@ class MySQLOperation:
             self.close()                       # 断开数据库连接
             print(e)
 
-import pandas as pd
+#
+# # csv/dataframe导入sql
+# class PDtoMYSQL:
+#     def __init__(self, host, user, pasword, db, tb, df, port):
+#
+#         self.host = host
+#         self.user = user
+#         self.port = port
+#         self.db = db
+#         self.password = pasword
+#         self.tb = tb
+#         self.df = df
+#
+#         sql = 'select * from '+self.tb
+#         # conn = create_engine('mysql+pymysql://'+self.user+':'+self.password+'@'+self.host+':'+self.port+'/'+self.db)
+#         conn = create_engine('mysql+pymysql://{0}:{1}@{2}:{3}/{4}?charset=utf8'.format(self.user
+#                                                                                          , self.password
+#                                                                                          , self.host
+#                                                                                          , self.port
+#                                                                                          , self.db))
+#         df.to_sql(self.tb, con=conn, if_exists='append')
+#         self.pdata = pd.read_sql(sql,conn)
+#
+#     def show(self):  # 显示数据集
+#         return print(self.pdata)
+
+
 host='rm-wz92xxsa5315l05g2so.mysql.rds.aliyuncs.com'
 port=3306
 user='algo76'
 passwd="123456@CUHKSZ"
-db='algotest'
+db='mfe5210project'
 # 方法实例化
 MySQL = MySQLOperation(host, port, db, user, passwd)
 
 #建表
-sql_str = '''CREATE TABLE Test (
-                        secu_code CHAR(20),
-                        hs_code CHAR(20),
-                        secu_abbr CHAR(20),
-                        chi_name CHAR(40),
-                        secu_market CHAR(20), 
-                        listed_state CHAR(20),
-                        listed_sector CHAR(20),
-                        updatetime CHAR(20));'''
+sql_str = '''CREATE TABLE Order_data (
+                        datetime CHAR(20),
+                        direction CHAR(20),
+                        avg_price FLOAT(40),
+                        volume INT(20),
+                        position_value FLOAT(40),
+                        position FLOAT(40),
+                        trade_detail CHAR(40));'''
 MySQL.Execute_Code(sql_str)
-
+#
 # 插入操作代码
 sql_str = '''
-INSERT INTO Test
-(`secu_code`,`hs_code`,`secu_abbr`,`chi_name`,`secu_market`,`listed_state`,`listed_sector`,`updatetime`)
+INSERT INTO Order_data
+(`datetime`,`direction`,`avg_price`,`volume`,`position_value`,`position`,`trade_detail`)
 VALUES
-('000001','000001.SZ','平安银行','平安银行股份有限公司','深圳证券交易所','上市',
-'主板','2021-10-25 20:15:55');
+('001','001','001','001','001','001','001');
 '''
 MySQL.Execute_Code(sql_str)
-
-# 查询数据
-sql_str = 'select * from Test'
+#
+# # 查询数据
+sql_str = 'select * from Order_data'
 results = MySQL.Select_Code(sql_str)
 print(results)
+#
+# sql_str = '''
+# select chi_name from Test where secu_code='000001'
+# '''
+# results = MySQL.Select_Code(sql_str)
+# print(results)
 
-sql_str = '''
-select chi_name from Test where secu_code='000001'
-'''
-results = MySQL.Select_Code(sql_str)
-print(results)
-
-
+# 从csv导入数据
+# # engine = create_engine('mysql+pymysql://{0}:{1}@{2}:{3}/{4}?charset=utf8'.format(user
+#                                                                          ,passwd
+#                                                                          ,host
+# #                                                                          ,port
+# #                                                                          ,db))
+# os.chdir(r'D:\Coding\Project\Database')
+# data = pd.read_csv('data.csv')
+# test_csvtosql = PDtoMYSQL(host, user, passwd, db, tb="damo", df=data, port=3306)
+# test_csvtosql.show()
