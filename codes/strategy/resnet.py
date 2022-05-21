@@ -45,7 +45,7 @@ b5 = nn.Sequential(*resnet_block(256, 512, 2))
 net = nn.Sequential(b1, b2, b3, b4, b5, nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten(), nn.Linear(512, 3))
 
 
-def train_ch6(net, train_iter, num_epochs, lr):
+def train(net, train_iter, num_epochs, lr):
     def init_weights(m):
         if type(m) == nn.Linear or type(m) == nn.Conv2d:
             nn.init.xavier_uniform_(m.weight)
@@ -84,7 +84,7 @@ df = dfTemp.iloc[:4500,1:]
 df_test = dfTemp.iloc[4500:9000,1:]
 
 train_iter = load_array(preprocess(df), batch_size=batch_size)
-train_ch6(net, train_iter, num_epochs, lr)
+train(net, train_iter, num_epochs, lr)
 
 #df_test=pd.read_csv('data_test.csv').iloc[:4500,2:]
 x_test, y_test=preprocess(df_test)
