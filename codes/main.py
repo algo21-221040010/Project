@@ -14,10 +14,21 @@ df = dfTemp.iloc[:4500,1:]
 df_test = dfTemp.iloc[4500:9000,1:]
 
 train_iter = load_array(preprocess(df), batch_size=batch_size)
-train(net, train_iter, num_epochs, lr)
+train(net(), train_iter, num_epochs, lr)
 
 x_test, y_test = preprocess(df_test)
-signal = net(x_test.float()).argmax(axis=1)  # get signal
+y_test_hat = net()(x_test.float()).argmax(axis=1)
+
+signal=np.array(y_test_hat)-1
+signal=np.where(signal<0, 0, signal)
+for i,_ in enumerate(signal):
+    n=len(signal)
+    if signal[i]==1 and i+30<n:
+        signal[i+30]=-1
+    if i==n-1:
+        signal[i]=-1
+
+signal=dict(zip(x_test['TradingTime'], signal))
 
 # 导入回测数据
 trade_data = getDataForBackTestAnalysis()
