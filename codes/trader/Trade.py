@@ -95,7 +95,7 @@ class Trade():
 
     # 获取 并 存储
     def get_trade_data(self):
-        param_list = ['value', 'trade_price', 'position_value', 'cash', 'signal']
+        param_list = ['trade_price', 'signal', 'value', 'position', 'position_value', 'cash', 'cost']
         value = {name: getattr(self, name) for name in param_list}
         return value
 
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     
     trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
     trade_data.index = pd.to_datetime(trade_data.index)
-    
+    trade_data.to_csv('result/trade_data.csv')
     # 回测指标分析
     analyse = Evaluate(trade_data)
     evaluate_data = analyse.evaluate()
