@@ -19,7 +19,7 @@ train(net(), train_iter, num_epochs, lr)
 x_test, y_test = preprocess(df_test)
 y_test_hat = net()(x_test.float()).argmax(axis=1)
 
-signal=np.array(y_test_hat)-1
+signal=np.array(y_test_hat)
 signal=np.where(signal<0, 0, signal)
 for i,_ in enumerate(signal):
     n=len(signal)
