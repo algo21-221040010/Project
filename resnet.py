@@ -2,7 +2,6 @@ import numpy as np
 from torch import nn
 from torch.nn import functional as F
 import torch
-import pandas as pd
 
 
 class Residual(nn.Module):
@@ -79,11 +78,15 @@ def preprocess(df):
     return (features, labels)
 
 lr, num_epochs, batch_size = 0.05, 5, 250
-df = pd.read_csv('data.csv').iloc[:4500,2:]
+#df = pd.read_csv('data.csv').iloc[:4500,2:]
+dfTemp = getDataForBackTestAnalysis()
+df = dfTemp.iloc[:4500,1:]
+df_test = dfTemp.iloc[4500:9000,1:]
+
 train_iter = load_array(preprocess(df), batch_size=batch_size)
 train_ch6(net, train_iter, num_epochs, lr)
 
-df_test=pd.read_csv('data_test.csv').iloc[:4500,2:]
+#df_test=pd.read_csv('data_test.csv').iloc[:4500,2:]
 x_test, y_test=preprocess(df_test)
 y_test_hat=net(x_test.float()).argmax(axis=1)
 torch.save(y_test_hat, 'result.pt')
