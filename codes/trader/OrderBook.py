@@ -1,8 +1,9 @@
 """
-获取bid ask price
+创建和读取 orderbook 数据
 """
 import pandas as pd
 from datetime import datetime
+
 
 class OrderBook():
     def __init__(self, data, symbol='IF2206') -> None:
@@ -29,10 +30,6 @@ class OrderBook():
         if current_vol < trade_volume:
             raise ValueError(f"Cannot {direction} {trade_volume} unit at {timestamp}! Please trade less than {current_vol} unit.")
         return trade_detail
-
-    def get_bid_ask():
-        pass
-
 
 
 def get_orderbook_data():

@@ -22,12 +22,10 @@ from Evaluate import Evaluate, get_return
 
 
 class Pictures():
-    def __init__(self, EvaluateData: Evaluate) -> None:
+    def __init__(self, trade_data) -> None:
         self.time_frequency = 240
         
-        self.trade_data = EvaluateData.trade_data
-        if EvaluateData.position_rule == 'int':
-            self.holding_gain = EvaluateData.get_holding_gain()
+        self.trade_data = trade_data
 
         self.savefig_path = r"C:\Users\shao\Desktop\CUHKSZ\programming\project\_"
         
@@ -89,7 +87,37 @@ class Pictures():
             plt.show()#savefig(self.savefig_path + "trading_sig.png")
             plt.close()
         data.reset_index(inplace=True)
+    
+    def draw_value(self):
+        data = self.trade_data.copy()
 
+        data['ret'] = data['value'].pct_change()
+
+        data.loc[:, 'cummax_price'] = data['value'].cummax()
+        data.loc[:, 'dd'] = -np.subtract(data.loc[:, 'cummax_price'], data.loc[:, 'value'])
+        data.loc[:, 'dd_ratio'] = np.divide(data.loc[:, 'dd'], data.loc[:, 'cummax_price'])
+
+        # 画图
+        fig = plt.figure(figsize=(10, 8))
+        gs = GridSpec(4, 1, figure=fig)
+        ax1 = fig.add_subplot(gs[0,0])
+        plt.bar(data[data['ret']>=0].index, data[data['ret']>=0]['ret'], color='r', edgecolor='r')
+        plt.bar(data[data['ret']<0].index, data[data['ret']<0]['ret'], color='g', edgecolor='g')
+        plt.ylabel('daily return')
+
+        ax2 = fig.add_subplot(gs[1:2, 0])
+        plt.bar(data.index, height=data['dd_ratio'])
+        plt.ylabel("策略回撤率")
+
+        ax3 = fig.add_subplot(gs[2:4, 0])
+        plt.plot(data['value'], 'k', label='benchmark value')
+        plt.legend()
+        plt.ylabel('value')
+        plt.grid(visible=True)
+        plt.tight_layout()
+        plt.show()  # savefig(self.savefig_path + "trading_sig.png")
+        plt.close()
+    
     def draw_value_ret(self, begin_year:int = 2011, end_year:int = 2021):
         strate_data = self.trade_data.copy()
         strate_data.loc[:,'bench_net_val'] = np.divide(strate_data['benchmark_price'], strate_data['benchmark_price'].iloc[0])
