@@ -37,7 +37,6 @@ def get_return(trade_data, freq='day', price_name='benchmark_price') -> series:
     Return
         series      [series]    以 date 为索引 的 收益率序列
     '''
-    # 策略收益率
     trade_data['date_time'] = trade_data.index
     trade_data['date'] = trade_data.apply(lambda x:datetime.datetime(x.date_time.year, x.date_time.month,
                                              x.date_time.day) , axis=1)
@@ -49,7 +48,7 @@ def get_return(trade_data, freq='day', price_name='benchmark_price') -> series:
         d_ret['ret'] = np.log( np.divide(d_ret['dayLast'].shift(-1), d_ret['dayLast']) )
         d_ret.set_index('date', inplace=True)
         return d_ret['ret']
-
+    
     if freq=='year':
         # 日内频率数据：只保留最后一个数据
         data = trade_data.drop_duplicates(['date'], keep='last')
@@ -85,16 +84,7 @@ class Evaluate():
                          f'{item.title():<15s} = '
                          f'{count}\n')
         return f_string
-     
-    # 获取每次交易的信息： 买卖价格、卖卖头寸、买卖时的策略净值
-    def change_trade_data_to_df(self):
-        # 计算主要用 dataframe 形式, 数据存储、读取 后，datetime格式变为了 str，需要修改
-        self.trade_data = pd.DataFrame.from_dict(self.trade_data, orient='index')
-        self.trade_data['date_time'] = pd.to_datetime(self.trade_data['date_time'])
-        self.trade_data.index = pd.to_datetime(self.trade_data.index)
-        # 经常需要用到
-        self.trade_data['date'] = self.trade_data['date_time'].apply(lambda x:x.date())
-        return self.trade_data
+
 
     # 获取每次买卖交易的信息，以便求出 '胜率', '盈亏比'等持仓表现数据（适用全仓交易
     def get_each_trade_info(self):
@@ -105,7 +95,6 @@ class Evaluate():
 
         # 以 字典嵌套 dataframe 的形式存储数据
         each_trade_info = buy_trade #{'buy':buy_trade, 'sell':sell_trade}
-        print('trade_Data:\n', each_trade_info)
         return each_trade_info
 
     def cal_max_drawdown(self, data):
@@ -127,7 +116,7 @@ class Evaluate():
         self.all_drawdown_ratio = price_data['dd_ratio'].to_dict()
 
         # 年度   最大回撤 & 最大回撤时间    
-        max_dd_data = price_data.resample('y').apply(self.cal_max_drawdown).apply(pd.Series)  # 最后一个apply，将 tuple series转变为两列的dataframe
+        max_dd_data = price_data.resample('W').apply(self.cal_max_drawdown).apply(pd.Series)  # 最后一个apply，将 tuple series转变为两列的dataframe
         max_dd_data.columns=['Maximum Drawdown', 'Maximum Drawdown Period']
         max_dd_data['year'] = max_dd_data.index.year
     
@@ -135,7 +124,6 @@ class Evaluate():
         self.max_drawdown = price_data['dd_ratio'].min()
         self.max_drawdown_time = price_data['dd_ratio'].argmin()  # 求出在groupby 里 min值的位置（非index
         return max_dd_data
-
 
     # 对于 持仓比例变化的 
     def get_daily_gain(self):
@@ -166,18 +154,18 @@ class Evaluate():
         # 计算每次开平仓的收益 --> 算胜率、盈亏比
         self.get_holding_gain()  # 计算开平仓收益
 
-        win_ratio = self.holding_data.resample("y").apply(lambda x: x[x['gain'] > 0].gain.count() / x.gain.count())
-        win_loss_ratio = self.holding_data.resample("y").apply(
+        win_ratio = self.holding_data.resample("W").apply(lambda x: x[x['gain'] > 0].gain.count() / x.gain.count())
+        win_loss_ratio = self.holding_data.resample("W").apply(
             lambda x: x[x['gain'] > 0].gain.mean() / x[x['gain'] <= 0].gain.mean())
 
         year_hold_perform = pd.concat([win_ratio, win_loss_ratio], axis=1, keys=['win_ratio', 'win_loss_ratio'])
-        year_hold_perform['year'] = year_hold_perform.index.year
+        year_hold_perform['WEEK'] = year_hold_perform.index
         return year_hold_perform
 
     def get_volatility(self) -> series:
         # 日度数据 计算年度波动率
-        ret_data = get_return(self.trade_data, freq='day', price_name='value')
-        stra_vol = ret_data.resample("y").agg(np.std) * np.sqrt(244)  # 日度收益率算出来的波动率-->年化
+        ret_data = self.trade_data['value'].pct_change() # get_return(self.trade_data, freq='day', price_name='value')
+        stra_vol = ret_data.resample("W").agg(np.std) * np.sqrt(255 * 244)  # 日度收益率算出来的波动率-->年化
         stra_vol.name = 'Annualized Volatility'
         return stra_vol
 
@@ -191,8 +179,7 @@ class Evaluate():
         return data['Annualized Return'] / (- data['Maximum Drawdown'])
 
     def get_ret_vol(self):
-        print(self.trade_data)
-        ret = get_return(self.trade_data, freq='year', price_name='value')
+        ret = self.trade_data['value'].resample('W').apply(lambda x: ((x[-1]/ x[0]) - 1)/ (len(x)/244))
         ret.name = 'Annualized Return'
         vol = self.get_volatility()
         ret_vol_data = pd.concat([ret, vol], axis=1)
@@ -207,9 +194,7 @@ class Evaluate():
             os.makedirs(os.path.split(self.result_path)[0])     
         self.evaluate_data.to_csv(self.result_path, index_label='year') #, index=False)
 
-    def evaluate(self):
-        # self.change_trade_data_to_df()
-      
+    def evaluate(self):      
         # 获取持仓表现： 胜率、盈亏比
         holding_perform = self.get_holding_perform()
         
@@ -218,11 +203,13 @@ class Evaluate():
         sharpe = self.get_sharpe(ret_vol_strategy)
 
         perform_data = pd.concat([holding_perform, ret_vol_strategy, sharpe], axis=1) #
-        perform_data['year'] = perform_data.index.year
+        # perform_data['year'] = perform_data.index.year
 
         max_drawdown = self.get_max_drawdown_data()
+        print(max_drawdown)
+        print(perform_data)
         
-        self.evaluate_data = pd.merge(max_drawdown,perform_data,on='year',how='left')
+        self.evaluate_data = pd.merge(max_drawdown,perform_data,left_index=True, right_index=True, how='left')
         self.evaluate_data['Calmar Ratio'] = self.get_calmar(self.evaluate_data)
 
         self.evaluate_data.set_index('year', inplace=True)
@@ -234,10 +221,39 @@ class Evaluate():
     
 if __name__ == '__main__':
     # trade = Trade()
-    analyse = Evaluate(trade)
+    # 数据导入国内股债收盘价
+    from Trade import Trade
+    from Pictures import Pictures 
+    # from TWAP import Twap
+
+    import pickle
+    def load_obj(name): 
+        with open(name, 'rb') as f: 
+            return pickle.load(f)
+    signal = load_obj(r'data\signal.pkl')
     
+    trade_data = pd.read_csv(r'data\202202data.csv', index_col=2)
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    trade_dt = list(trade_data.index)
+    trade_price = trade_data['OpenPrice'].to_dict()
+
+    trade_dict = {}
+    # 调用 Trade 类，进行模拟交易
+    trade = Trade()  
+    for date in trade_dt:
+        trade.update(date, price=trade_price[date], signal=signal[date])
+        trade_dict[date] = trade.trade()
+    
+    trade_data = pd.DataFrame.from_dict(trade_dict, 'index')  # 获得交易持仓净值数据
+    trade_data.index = pd.to_datetime(trade_data.index)
+    
+    # 回测指标分析
+    analyse = Evaluate(trade_data)
     evaluate_data = analyse.evaluate()
-    for key, value in evaluate_data.items():
-        print(key, ': ',value)
-    #print(evaluate_data)
+
+    print(evaluate_data)
+    # p = Pictures(trade_data)
+    # # print(type(p).__name__)
+    # p.draw()
     
